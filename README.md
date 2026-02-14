@@ -3,23 +3,6 @@ About roboplan-feedstock
 
 Feedstock license: [BSD-3-Clause](https://github.com/conda-forge/roboplan-feedstock/blob/main/LICENSE.txt)
 
-
-About roboplan
---------------
-
-Home: https://github.com/open-planning/roboplan
-
-Package license: MIT
-
-Summary: Modern robot motion planning library based on Pinocchio.
-
-Development: https://github.com/open-planning/roboplan
-
-Documentation: https://roboplan.readthedocs.io/en/latest/
-
-About roboplan
---------------
-
 Home: https://github.com/open-planning/roboplan
 
 Package license: MIT
