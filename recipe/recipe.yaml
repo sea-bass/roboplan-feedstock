@@ -1,6 +1,6 @@
 context:
   name: roboplan
-  version: "0.2.0"
+  version: "0.3.0"
 
 recipe:
   name: roboplan
@@ -8,10 +8,10 @@ recipe:
 
 source:
   url: https://github.com/open-planning/roboplan/archive/refs/tags/${{ version }}.tar.gz
-  sha256: cc8f630975bbb29674e981b1a46899d94d13dd9e1bc9bfa58edc64182e216870
+  sha256: 957f7bff8b81f9fedb851cc5b4528dd4b8291a538345906ec9ceb0944a1c3ca1
 
 build:
-  number: 2
+  number: 0
 
 outputs:
   - package:
@@ -75,7 +75,7 @@ outputs:
       host:
         - gtest
         - libcoal
-        - libpinocchio
+        - libpinocchio ==3.9.0
         - yaml-cpp
         - libroboplan-example-models
         - eigen-abi-devel
@@ -273,7 +273,7 @@ outputs:
       run:
         - python >=${{ python_min }}
         - numpy
-        - pinocchio-python
+        - pinocchio-python ==3.9.0
         - libroboplan
         - libroboplan-example-models
         - libroboplan-oink
