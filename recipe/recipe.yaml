@@ -1,6 +1,8 @@
 context:
   name: roboplan
   version: "0.6.1"
+  # Testing open-planning/roboplan#301 (allow-generating-conda-packages-from-pixi).
+  git_rev: "8bd7b2ec35956b13e502c693abef4dc86050ade9"
   pinocchio_min: "4.0.0"
   pinocchio_max: "5.0.0"
 
@@ -9,13 +11,47 @@ recipe:
   version: ${{ version }}
 
 source:
-  url: https://github.com/open-planning/roboplan/archive/refs/tags/${{ version }}.tar.gz
-  sha256: 1d6fb63c597be17f48801bec3846166e6403b3130ac61c68973e99335bca83a6
+  url: https://github.com/open-planning/roboplan/archive/${{ git_rev }}.tar.gz
+  sha256: d32bd18db792c11f1c842599630485f4a658aa93002ef18e3a5f167a92b58544
 
 build:
   number: 0
 
 outputs:
+  - package:
+      name: roboplan-common
+      version: ${{ version }}
+    build:
+      script:
+        file: build_python
+        env:
+          ROBOPLAN_PACKAGE: roboplan_common
+    requirements:
+      run_exports:
+        - ${{ pin_subpackage("roboplan-common", upper_bound="x.x.x") }}
+      build:
+        - ${{ stdlib('c') }}
+        - ${{ compiler('cxx') }}
+        - cmake
+        - ninja
+        - python
+      host:
+        - python
+      run:
+        - python
+    tests:
+      - package_contents:
+          site_packages:
+            - roboplan_common
+          files:
+            - if: win
+              then: Library/lib/cmake/roboplan_common/roboplan_commonConfig.cmake
+              else: lib/cmake/roboplan_common/roboplan_commonConfig.cmake
+      - python:
+          pip_check: false
+          imports:
+            - roboplan_common
+
   - package:
       name: libroboplan-example-models
       version: ${{ version }}
@@ -74,8 +110,10 @@ outputs:
         - nanobind
         - if: match(python, "<3.11")
           then: typing_extensions
+        - roboplan-common ==${{ version }}
       run:
         - python
+        - roboplan-common ==${{ version }}
         - numpy
         - pinocchio-python >=${{ pinocchio_min }},<${{ pinocchio_max }}
       ignore_run_exports:
@@ -156,6 +194,7 @@ outputs:
         - nanobind
         - if: match(python, "<3.11")
           then: typing_extensions
+        - roboplan-common ==${{ version }}
         - libcoal
         - libpinocchio >=${{ pinocchio_min }},<${{ pinocchio_max }}
         - tinyxml2
@@ -164,6 +203,7 @@ outputs:
         - eigen-abi-devel
       run:
         - python
+        - roboplan-common ==${{ version }}
         - numpy
         - pinocchio-python >=${{ pinocchio_min }},<${{ pinocchio_max }}
         - roboplan-example-models-python ==${{ version }}
@@ -243,12 +283,14 @@ outputs:
         - nanobind
         - if: match(python, "<3.11")
           then: typing_extensions
+        - roboplan-common ==${{ version }}
         - roboplan-python ==${{ version }}
         - roboplan-example-models-python ==${{ version }}
         - proxsuite
         - eigen-abi-devel
       run:
         - python
+        - roboplan-common ==${{ version }}
         - roboplan-python ==${{ version }}
         - roboplan-example-models-python ==${{ version }}
       ignore_run_exports:
@@ -321,11 +363,13 @@ outputs:
         - nanobind
         - if: match(python, "<3.11")
           then: typing_extensions
+        - roboplan-common ==${{ version }}
         - roboplan-python ==${{ version }}
         - roboplan-example-models-python ==${{ version }}
         - eigen-abi-devel
       run:
         - python
+        - roboplan-common ==${{ version }}
         - roboplan-python ==${{ version }}
         - roboplan-example-models-python ==${{ version }}
     tests:
@@ -398,11 +442,13 @@ outputs:
         - nanobind
         - if: match(python, "<3.11")
           then: typing_extensions
+        - roboplan-common ==${{ version }}
         - roboplan-python ==${{ version }}
         - roboplan-example-models-python ==${{ version }}
         - eigen-abi-devel
       run:
         - python
+        - roboplan-common ==${{ version }}
         - roboplan-python ==${{ version }}
         - roboplan-example-models-python ==${{ version }}
       ignore_run_exports:
@@ -481,12 +527,14 @@ outputs:
         - nanobind
         - if: match(python, "<3.11")
           then: typing_extensions
+        - roboplan-common ==${{ version }}
         - roboplan-python ==${{ version }}
         - roboplan-example-models-python ==${{ version }}
         - libtoppra
         - eigen-abi-devel
       run:
         - python
+        - roboplan-common ==${{ version }}
         - roboplan-python ==${{ version }}
         - roboplan-example-models-python ==${{ version }}
       ignore_run_exports:
@@ -566,6 +614,7 @@ outputs:
         - nanobind
         - if: match(python, "<3.11")
           then: typing_extensions
+        - roboplan-common ==${{ version }}
         - roboplan-python ==${{ version }}
         - roboplan-example-models-python ==${{ version }}
         - roboplan-oink-python ==${{ version }}
@@ -574,6 +623,7 @@ outputs:
         - eigen-abi-devel
       run:
         - python
+        - roboplan-common ==${{ version }}
         - roboplan-python ==${{ version }}
         - roboplan-example-models-python ==${{ version }}
         - roboplan-oink-python ==${{ version }}
@@ -618,6 +668,7 @@ outputs:
     requirements:
       run:
         - python
+        - roboplan-common ==${{ version }}
         - roboplan-python ==${{ version }}
         - roboplan-example-models-python ==${{ version }}
         - roboplan-oink-python ==${{ version }}
@@ -635,6 +686,7 @@ outputs:
       - python:
           pip_check: false
           imports:
+            - roboplan_common
             - roboplan.core
             - roboplan.example_models
             - roboplan.optimal_ik
