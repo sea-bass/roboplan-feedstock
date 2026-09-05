@@ -131,7 +131,7 @@ outputs:
             - roboplan.example_models
 
   - package:
-      name: libroboplan
+      name: libroboplan-core
       version: ${{ version }}
     build:
       script:
@@ -140,7 +140,7 @@ outputs:
           ROBOPLAN_PACKAGE: roboplan
     requirements:
       run_exports:
-        - ${{ pin_subpackage("libroboplan", upper_bound="x.x.x") }}
+        - ${{ pin_subpackage("libroboplan-core", upper_bound="x.x.x") }}
       build:
         - ${{ stdlib('c') }}
         - ${{ compiler('cxx') }}
@@ -167,7 +167,7 @@ outputs:
             - roboplan
 
   - package:
-      name: roboplan-python
+      name: roboplan-core-python
       version: ${{ version }}
     build:
       script:
@@ -176,7 +176,7 @@ outputs:
           ROBOPLAN_PACKAGE: roboplan
     requirements:
       run_exports:
-        - ${{ pin_subpackage("roboplan-python", upper_bound="x.x.x") }}
+        - ${{ pin_subpackage("roboplan-core-python", upper_bound="x.x.x") }}
       build:
         - ${{ stdlib('c') }}
         - ${{ compiler('cxx') }}
@@ -241,7 +241,7 @@ outputs:
         - if: win
           then: dlfcn-win32
         - gtest
-        - libroboplan ==${{ version }}
+        - libroboplan-core ==${{ version }}
         - libroboplan-example-models ==${{ version }}
         - proxsuite
         - eigen-abi-devel
@@ -284,14 +284,14 @@ outputs:
         - if: match(python, "<3.11")
           then: typing_extensions
         - roboplan-common ==${{ version }}
-        - roboplan-python ==${{ version }}
+        - roboplan-core-python ==${{ version }}
         - roboplan-example-models-python ==${{ version }}
         - proxsuite
         - eigen-abi-devel
       run:
         - python
         - roboplan-common ==${{ version }}
-        - roboplan-python ==${{ version }}
+        - roboplan-core-python ==${{ version }}
         - roboplan-example-models-python ==${{ version }}
       ignore_run_exports:
         by_name:
@@ -327,7 +327,7 @@ outputs:
         - if: win
           then: dlfcn-win32
         - gtest
-        - libroboplan ==${{ version }}
+        - libroboplan-core ==${{ version }}
         - libroboplan-example-models ==${{ version }}
         - eigen-abi-devel
     tests:
@@ -364,13 +364,13 @@ outputs:
         - if: match(python, "<3.11")
           then: typing_extensions
         - roboplan-common ==${{ version }}
-        - roboplan-python ==${{ version }}
+        - roboplan-core-python ==${{ version }}
         - roboplan-example-models-python ==${{ version }}
         - eigen-abi-devel
       run:
         - python
         - roboplan-common ==${{ version }}
-        - roboplan-python ==${{ version }}
+        - roboplan-core-python ==${{ version }}
         - roboplan-example-models-python ==${{ version }}
     tests:
       - package_contents:
@@ -401,7 +401,7 @@ outputs:
         - if: win
           then: dlfcn-win32
         - gtest
-        - libroboplan ==${{ version }}
+        - libroboplan-core ==${{ version }}
         - libroboplan-example-models ==${{ version }}
         - eigen-abi-devel
       ignore_run_exports:
@@ -443,13 +443,13 @@ outputs:
         - if: match(python, "<3.11")
           then: typing_extensions
         - roboplan-common ==${{ version }}
-        - roboplan-python ==${{ version }}
+        - roboplan-core-python ==${{ version }}
         - roboplan-example-models-python ==${{ version }}
         - eigen-abi-devel
       run:
         - python
         - roboplan-common ==${{ version }}
-        - roboplan-python ==${{ version }}
+        - roboplan-core-python ==${{ version }}
         - roboplan-example-models-python ==${{ version }}
       ignore_run_exports:
         by_name:
@@ -485,7 +485,7 @@ outputs:
         - if: win
           then: dlfcn-win32
         - gtest
-        - libroboplan ==${{ version }}
+        - libroboplan-core ==${{ version }}
         - libroboplan-example-models ==${{ version }}
         - libtoppra
         - eigen-abi-devel
@@ -528,14 +528,14 @@ outputs:
         - if: match(python, "<3.11")
           then: typing_extensions
         - roboplan-common ==${{ version }}
-        - roboplan-python ==${{ version }}
+        - roboplan-core-python ==${{ version }}
         - roboplan-example-models-python ==${{ version }}
         - libtoppra
         - eigen-abi-devel
       run:
         - python
         - roboplan-common ==${{ version }}
-        - roboplan-python ==${{ version }}
+        - roboplan-core-python ==${{ version }}
         - roboplan-example-models-python ==${{ version }}
       ignore_run_exports:
         by_name:
@@ -571,7 +571,7 @@ outputs:
         - if: win
           then: dlfcn-win32
         - gtest
-        - libroboplan ==${{ version }}
+        - libroboplan-core ==${{ version }}
         - libroboplan-example-models ==${{ version }}
         - libroboplan-oink ==${{ version }}
         - libroboplan-toppra ==${{ version }}
@@ -615,7 +615,7 @@ outputs:
         - if: match(python, "<3.11")
           then: typing_extensions
         - roboplan-common ==${{ version }}
-        - roboplan-python ==${{ version }}
+        - roboplan-core-python ==${{ version }}
         - roboplan-example-models-python ==${{ version }}
         - roboplan-oink-python ==${{ version }}
         - roboplan-toppra-python ==${{ version }}
@@ -624,7 +624,7 @@ outputs:
       run:
         - python
         - roboplan-common ==${{ version }}
-        - roboplan-python ==${{ version }}
+        - roboplan-core-python ==${{ version }}
         - roboplan-example-models-python ==${{ version }}
         - roboplan-oink-python ==${{ version }}
         - roboplan-toppra-python ==${{ version }}
@@ -643,11 +643,11 @@ outputs:
             - roboplan.cartesian_planning
 
   - package:
-      name: libroboplan-all
+      name: libroboplan
       version: ${{ version }}
     requirements:
       run:
-        - libroboplan ==${{ version }}
+        - libroboplan-core ==${{ version }}
         - libroboplan-example-models ==${{ version }}
         - libroboplan-oink ==${{ version }}
         - libroboplan-rrt ==${{ version }}
@@ -663,13 +663,13 @@ outputs:
             - test_libs.bat
 
   - package:
-      name: roboplan-all-python
+      name: roboplan-python
       version: ${{ version }}
     requirements:
       run:
         - python
         - roboplan-common ==${{ version }}
-        - roboplan-python ==${{ version }}
+        - roboplan-core-python ==${{ version }}
         - roboplan-example-models-python ==${{ version }}
         - roboplan-oink-python ==${{ version }}
         - roboplan-rrt-python ==${{ version }}
