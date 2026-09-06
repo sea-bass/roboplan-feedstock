@@ -14,6 +14,8 @@ docker_image:
 - quay.io/condaforge/linux-anvil-x86_64:alma10
 eigen_abi_devel:
 - 5.0.1
+numpy:
+- '2'
 pin_run_as_build:
   python:
     min_pin: x.x
@@ -23,7 +25,11 @@ python:
 - 3.12.* *_cpython
 - 3.13.* *_cp313
 - 3.14.* *_cp314
+qhull:
+- '2020.2'
 target_platform:
 - linux-64
 tinyxml2:
 - '11.0'
+urdfdom:
+- '5.1'
