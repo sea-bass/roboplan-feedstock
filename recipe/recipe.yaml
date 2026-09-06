@@ -5,6 +5,7 @@ context:
   git_rev: "b262d5cd14d77bb341a2a6d7b3d59d24e0abfddf"
   pinocchio_min: "4.0.0"
   pinocchio_max: "5.0.0"
+  library_prefix: ${{ "Library/" if win else "" }}
 
 recipe:
   name: roboplan
@@ -17,626 +18,337 @@ source:
 build:
   number: 0
 
+# Two runs of upstream's superbuild/ tree feed every output below:
+#   - roboplan-cpp: Python bindings off, split into the libroboplan-* outputs.
+#   - roboplan-py:  Python bindings on (one per Python variant), split into
+#     roboplan-common and the roboplan-*-python outputs, which take only the
+#     site-packages files and depend on the libroboplan-* outputs at runtime.
+# Each output keeps its own build/host/run requirements (inherit.run_exports=false),
+# so run_exports and overlinking checks are scoped per package as before. The
+# compiler and stdlib are repeated per compiled output so that their strong
+# run_exports (libstdcxx, libgcc, __glibc) still land in each package's run deps.
 outputs:
-  - package:
-      name: roboplan-common
-      version: ${{ version }}
+  - staging:
+      name: roboplan-cpp
     build:
       script:
-        file: build_python
+        file: build_metapackage
         env:
-          ROBOPLAN_PACKAGE: roboplan_common
+          ROBOPLAN_PYTHON_BINDINGS: "OFF"
     requirements:
-      run_exports:
-        - ${{ pin_subpackage("roboplan-common", upper_bound="x.x.x") }}
+      build:
+        - ${{ stdlib('c') }}
+        - ${{ compiler('cxx') }}
+        - cmake
+        - ninja
+      host:
+        - if: win
+          then: dlfcn-win32
+        - libcoal
+        - libpinocchio >=${{ pinocchio_min }},<${{ pinocchio_max }}
+        - tinyxml2
+        - yaml-cpp
+        - proxsuite
+        - libtoppra
+        - eigen-abi-devel
+
+  - staging:
+      name: roboplan-py
+    build:
+      script:
+        file: build_metapackage
+        env:
+          ROBOPLAN_PYTHON_BINDINGS: "ON"
+    requirements:
       build:
         - ${{ stdlib('c') }}
         - ${{ compiler('cxx') }}
         - cmake
         - ninja
         - python
+        - nanobind
       host:
+        - if: win
+          then: dlfcn-win32
         - python
-      run:
-        - python
-    tests:
-      - package_contents:
-          site_packages:
-            - roboplan_common
-      - python:
-          pip_check: false
-          imports:
-            - roboplan_common
+        - nanobind
+        # Stub generation imports the roboplan.* packages, which import these.
+        - numpy
+        - pinocchio-python >=${{ pinocchio_min }},<${{ pinocchio_max }}
+        - libcoal
+        - libpinocchio >=${{ pinocchio_min }},<${{ pinocchio_max }}
+        - tinyxml2
+        - yaml-cpp
+        - proxsuite
+        - libtoppra
+        - eigen-abi-devel
+
+  # C++ libs
 
   - package:
       name: libroboplan-example-models
       version: ${{ version }}
+    inherit:
+      from: roboplan-cpp
+      run_exports: false
     build:
-      script:
-        file: build_cpp
-        env:
-          ROBOPLAN_PACKAGE: roboplan_example_models
+      files:
+        - ${{ library_prefix }}include/roboplan_example_models/**
+        - ${{ library_prefix }}lib/cmake/roboplan_example_models/**
+        - ${{ library_prefix }}share/roboplan_example_models/**
+        - if: win
+          then:
+            - Library/bin/roboplan_example_models.dll
+            - Library/lib/roboplan_example_models.lib
+          else:
+            - lib/libroboplan_example_models.*
     requirements:
       run_exports:
         - ${{ pin_subpackage("libroboplan-example-models", upper_bound="x.x.x") }}
       build:
         - ${{ stdlib('c') }}
         - ${{ compiler('cxx') }}
-        - cmake
-        - ninja
       host:
         - if: win
           then: dlfcn-win32
-        - gtest
-      ignore_run_exports:
-        by_name:
-          - gtest
-        from_package:
-          - gtest
     tests:
       - package_contents:
           lib:
             - roboplan_example_models
-
-  - package:
-      name: roboplan-example-models-python
-      version: ${{ version }}
-    build:
-      script:
-        file: build_python
-        env:
-          ROBOPLAN_PACKAGE: roboplan_example_models
-    requirements:
-      run_exports:
-        - ${{ pin_subpackage("roboplan-example-models-python", upper_bound="x.x.x") }}
-      build:
-        - ${{ stdlib('c') }}
-        - ${{ compiler('cxx') }}
-        - cmake
-        - ninja
-        - python
-        - nanobind
-        - if: match(python, "<3.11")
-          then: typing_extensions
-      host:
-        - if: win
-          then: dlfcn-win32
-        - gtest
-        - python
-        - nanobind
-        - if: match(python, "<3.11")
-          then: typing_extensions
-        - roboplan-common ==${{ version }}
-      run:
-        - python
-        - roboplan-common ==${{ version }}
-        - numpy
-        - pinocchio-python >=${{ pinocchio_min }},<${{ pinocchio_max }}
-      ignore_run_exports:
-        by_name:
-          - gtest
-        from_package:
-          - gtest
-    tests:
-      - package_contents:
-          lib:
-            - roboplan_example_models
-      - python:
-          pip_check: false
-          imports:
-            - roboplan.example_models
 
   - package:
       name: libroboplan-core
       version: ${{ version }}
+    inherit:
+      from: roboplan-cpp
+      run_exports: false
     build:
-      script:
-        file: build_cpp
-        env:
-          ROBOPLAN_PACKAGE: roboplan_core
+      files:
+        - ${{ library_prefix }}include/roboplan/**
+        - ${{ library_prefix }}include/roboplan_bindings/**
+        - ${{ library_prefix }}include/tinyxml2/**
+        - ${{ library_prefix }}include/tl/**
+        - ${{ library_prefix }}lib/cmake/roboplan/**
+        - if: win
+          then:
+            - Library/bin/roboplan.dll
+            - Library/bin/roboplan_filters.dll
+            - Library/lib/roboplan.lib
+            - Library/lib/roboplan_filters.lib
+          else:
+            - lib/libroboplan.*
+            - lib/libroboplan_filters.*
     requirements:
       run_exports:
         - ${{ pin_subpackage("libroboplan-core", upper_bound="x.x.x") }}
       build:
         - ${{ stdlib('c') }}
         - ${{ compiler('cxx') }}
-        - cmake
-        - ninja
       host:
         - if: win
           then: dlfcn-win32
-        - gtest
         - libcoal
         - libpinocchio >=${{ pinocchio_min }},<${{ pinocchio_max }}
         - tinyxml2
+        - urdfdom
         - yaml-cpp
-        - libroboplan-example-models ==${{ version }}
         - eigen-abi-devel
-      ignore_run_exports:
-        by_name:
-          - gtest
-        from_package:
-          - gtest
     tests:
       - package_contents:
           lib:
             - roboplan
-
-  - package:
-      name: roboplan-core-python
-      version: ${{ version }}
-    build:
-      script:
-        file: build_python
-        env:
-          ROBOPLAN_PACKAGE: roboplan_core
-    requirements:
-      run_exports:
-        - ${{ pin_subpackage("roboplan-core-python", upper_bound="x.x.x") }}
-      build:
-        - ${{ stdlib('c') }}
-        - ${{ compiler('cxx') }}
-        - cmake
-        - ninja
-        - python
-        - nanobind
-        - if: match(python, "<3.11")
-          then: typing_extensions
-      host:
-        - if: win
-          then: dlfcn-win32
-        - gtest
-        - python
-        - nanobind
-        - if: match(python, "<3.11")
-          then: typing_extensions
-        - roboplan-common ==${{ version }}
-        - libcoal
-        - libpinocchio >=${{ pinocchio_min }},<${{ pinocchio_max }}
-        - tinyxml2
-        - yaml-cpp
-        - roboplan-example-models-python ==${{ version }}
-        - eigen-abi-devel
-      run:
-        - python
-        - roboplan-common ==${{ version }}
-        - numpy
-        - pinocchio-python >=${{ pinocchio_min }},<${{ pinocchio_max }}
-        - roboplan-example-models-python ==${{ version }}
-      ignore_run_exports:
-        by_name:
-          - gtest
-        from_package:
-          - gtest
-    tests:
-      - package_contents:
-          lib:
-            - roboplan
-      - python:
-          pip_check: false
-          imports:
-            - roboplan.core
 
   - package:
       name: libroboplan-oink
       version: ${{ version }}
+    inherit:
+      from: roboplan-cpp
+      run_exports: false
     build:
-      script:
-        file: build_cpp
-        env:
-          ROBOPLAN_PACKAGE: roboplan_oink
+      files:
+        - ${{ library_prefix }}include/roboplan_oink/**
+        - ${{ library_prefix }}lib/cmake/roboplan_oink/**
+        - if: win
+          then:
+            - Library/bin/roboplan_oink.dll
+            - Library/lib/roboplan_oink.lib
+          else:
+            - lib/libroboplan_oink.*
+      dynamic_linking:
+        missing_dso_allowlist:
+          # pinocchio's parallel algorithms pull the OpenMP runtime into the
+          # link; libpinocchio's own _openmp_mutex dependency provides it.
+          - "**/libgomp.so*"
     requirements:
       run_exports:
         - ${{ pin_subpackage("libroboplan-oink", upper_bound="x.x.x") }}
       build:
         - ${{ stdlib('c') }}
         - ${{ compiler('cxx') }}
-        - cmake
-        - ninja
       host:
         - if: win
           then: dlfcn-win32
-        - gtest
         - libroboplan-core ==${{ version }}
-        - libroboplan-example-models ==${{ version }}
+        - libcoal
+        - libpinocchio >=${{ pinocchio_min }},<${{ pinocchio_max }}
         - proxsuite
+        - qhull
         - eigen-abi-devel
-      ignore_run_exports:
-        by_name:
-          - gtest
-        from_package:
-          - gtest
     tests:
       - package_contents:
           lib:
             - roboplan_oink
-
-  - package:
-      name: roboplan-oink-python
-      version: ${{ version }}
-    build:
-      script:
-        file: build_python
-        env:
-          ROBOPLAN_PACKAGE: roboplan_oink
-    requirements:
-      run_exports:
-        - ${{ pin_subpackage("roboplan-oink-python", upper_bound="x.x.x") }}
-      build:
-        - ${{ stdlib('c') }}
-        - ${{ compiler('cxx') }}
-        - cmake
-        - ninja
-        - python
-        - nanobind
-        - if: match(python, "<3.11")
-          then: typing_extensions
-      host:
-        - if: win
-          then: dlfcn-win32
-        - gtest
-        - python
-        - nanobind
-        - if: match(python, "<3.11")
-          then: typing_extensions
-        - roboplan-common ==${{ version }}
-        - roboplan-core-python ==${{ version }}
-        - roboplan-example-models-python ==${{ version }}
-        - proxsuite
-        - eigen-abi-devel
-      run:
-        - python
-        - roboplan-common ==${{ version }}
-        - roboplan-core-python ==${{ version }}
-        - roboplan-example-models-python ==${{ version }}
-      ignore_run_exports:
-        by_name:
-          - gtest
-        from_package:
-          - gtest
-    tests:
-      - package_contents:
-          lib:
-            - roboplan_oink
-      - python:
-          pip_check: false
-          imports:
-            - roboplan.optimal_ik
 
   - package:
       name: libroboplan-rrt
       version: ${{ version }}
+    inherit:
+      from: roboplan-cpp
+      run_exports: false
     build:
-      script:
-        file: build_cpp
-        env:
-          ROBOPLAN_PACKAGE: roboplan_rrt
+      files:
+        - ${{ library_prefix }}include/roboplan_rrt/**
+        - ${{ library_prefix }}include/dynotree/**
+        - ${{ library_prefix }}lib/cmake/roboplan_rrt/**
+        - if: win
+          then:
+            - Library/bin/roboplan_rrt.dll
+            - Library/lib/roboplan_rrt.lib
+          else:
+            - lib/libroboplan_rrt.*
+      dynamic_linking:
+        missing_dso_allowlist:
+          # pinocchio's parallel algorithms pull the OpenMP runtime into the
+          # link; libpinocchio's own _openmp_mutex dependency provides it.
+          - "**/libgomp.so*"
     requirements:
       run_exports:
         - ${{ pin_subpackage("libroboplan-rrt", upper_bound="x.x.x") }}
       build:
         - ${{ stdlib('c') }}
         - ${{ compiler('cxx') }}
-        - cmake
-        - ninja
       host:
         - if: win
           then: dlfcn-win32
-        - gtest
         - libroboplan-core ==${{ version }}
-        - libroboplan-example-models ==${{ version }}
+        - libcoal
+        - libpinocchio >=${{ pinocchio_min }},<${{ pinocchio_max }}
+        - qhull
         - eigen-abi-devel
     tests:
       - package_contents:
           lib:
             - roboplan_rrt
-
-  - package:
-      name: roboplan-rrt-python
-      version: ${{ version }}
-    build:
-      script:
-        file: build_python
-        env:
-          ROBOPLAN_PACKAGE: roboplan_rrt
-    requirements:
-      run_exports:
-        - ${{ pin_subpackage("roboplan-rrt-python", upper_bound="x.x.x") }}
-      build:
-        - ${{ stdlib('c') }}
-        - ${{ compiler('cxx') }}
-        - cmake
-        - ninja
-        - python
-        - nanobind
-        - if: match(python, "<3.11")
-          then: typing_extensions
-      host:
-        - if: win
-          then: dlfcn-win32
-        - gtest
-        - python
-        - nanobind
-        - if: match(python, "<3.11")
-          then: typing_extensions
-        - roboplan-common ==${{ version }}
-        - roboplan-core-python ==${{ version }}
-        - roboplan-example-models-python ==${{ version }}
-        - eigen-abi-devel
-      run:
-        - python
-        - roboplan-common ==${{ version }}
-        - roboplan-core-python ==${{ version }}
-        - roboplan-example-models-python ==${{ version }}
-    tests:
-      - package_contents:
-          lib:
-            - roboplan_rrt
-      - python:
-          pip_check: false
-          imports:
-            - roboplan.rrt
 
   - package:
       name: libroboplan-simple-ik
       version: ${{ version }}
+    inherit:
+      from: roboplan-cpp
+      run_exports: false
     build:
-      script:
-        file: build_cpp
-        env:
-          ROBOPLAN_PACKAGE: roboplan_simple_ik
+      files:
+        - ${{ library_prefix }}include/roboplan_simple_ik/**
+        - ${{ library_prefix }}lib/cmake/roboplan_simple_ik/**
+        - if: win
+          then:
+            - Library/bin/roboplan_simple_ik.dll
+            - Library/lib/roboplan_simple_ik.lib
+          else:
+            - lib/libroboplan_simple_ik.*
+      dynamic_linking:
+        missing_dso_allowlist:
+          # pinocchio's parallel algorithms pull the OpenMP runtime into the
+          # link; libpinocchio's own _openmp_mutex dependency provides it.
+          - "**/libgomp.so*"
     requirements:
       run_exports:
         - ${{ pin_subpackage("libroboplan-simple-ik", upper_bound="x.x.x") }}
       build:
         - ${{ stdlib('c') }}
         - ${{ compiler('cxx') }}
-        - cmake
-        - ninja
       host:
         - if: win
           then: dlfcn-win32
-        - gtest
         - libroboplan-core ==${{ version }}
-        - libroboplan-example-models ==${{ version }}
+        - libcoal
+        - libpinocchio >=${{ pinocchio_min }},<${{ pinocchio_max }}
+        - qhull
         - eigen-abi-devel
-      ignore_run_exports:
-        by_name:
-          - gtest
-        from_package:
-          - gtest
     tests:
       - package_contents:
           lib:
             - roboplan_simple_ik
-
-  - package:
-      name: roboplan-simple-ik-python
-      version: ${{ version }}
-    build:
-      script:
-        file: build_python
-        env:
-          ROBOPLAN_PACKAGE: roboplan_simple_ik
-    requirements:
-      run_exports:
-        - ${{ pin_subpackage("roboplan-simple-ik-python", upper_bound="x.x.x") }}
-      build:
-        - ${{ stdlib('c') }}
-        - ${{ compiler('cxx') }}
-        - cmake
-        - ninja
-        - python
-        - nanobind
-        - if: match(python, "<3.11")
-          then: typing_extensions
-      host:
-        - if: win
-          then: dlfcn-win32
-        - gtest
-        - python
-        - nanobind
-        - if: match(python, "<3.11")
-          then: typing_extensions
-        - roboplan-common ==${{ version }}
-        - roboplan-core-python ==${{ version }}
-        - roboplan-example-models-python ==${{ version }}
-        - eigen-abi-devel
-      run:
-        - python
-        - roboplan-common ==${{ version }}
-        - roboplan-core-python ==${{ version }}
-        - roboplan-example-models-python ==${{ version }}
-      ignore_run_exports:
-        by_name:
-          - gtest
-        from_package:
-          - gtest
-    tests:
-      - package_contents:
-          lib:
-            - roboplan_simple_ik
-      - python:
-          pip_check: false
-          imports:
-            - roboplan.simple_ik
 
   - package:
       name: libroboplan-toppra
       version: ${{ version }}
+    inherit:
+      from: roboplan-cpp
+      run_exports: false
     build:
-      script:
-        file: build_cpp
-        env:
-          ROBOPLAN_PACKAGE: roboplan_toppra
+      files:
+        - ${{ library_prefix }}include/roboplan_toppra/**
+        - ${{ library_prefix }}lib/cmake/roboplan_toppra/**
+        - if: win
+          then:
+            - Library/bin/roboplan_toppra.dll
+            - Library/lib/roboplan_toppra.lib
+          else:
+            - lib/libroboplan_toppra.*
     requirements:
       run_exports:
         - ${{ pin_subpackage("libroboplan-toppra", upper_bound="x.x.x") }}
       build:
         - ${{ stdlib('c') }}
         - ${{ compiler('cxx') }}
-        - cmake
-        - ninja
       host:
         - if: win
           then: dlfcn-win32
-        - gtest
         - libroboplan-core ==${{ version }}
-        - libroboplan-example-models ==${{ version }}
+        - libcoal
         - libtoppra
+        - qhull
         - eigen-abi-devel
-      ignore_run_exports:
-        by_name:
-          - gtest
-        from_package:
-          - gtest
     tests:
       - package_contents:
           lib:
             - roboplan_toppra
-
-  - package:
-      name: roboplan-toppra-python
-      version: ${{ version }}
-    build:
-      script:
-        file: build_python
-        env:
-          ROBOPLAN_PACKAGE: roboplan_toppra
-    requirements:
-      run_exports:
-        - ${{ pin_subpackage("roboplan-toppra-python", upper_bound="x.x.x") }}
-      build:
-        - ${{ stdlib('c') }}
-        - ${{ compiler('cxx') }}
-        - cmake
-        - ninja
-        - python
-        - nanobind
-        - if: match(python, "<3.11")
-          then: typing_extensions
-      host:
-        - if: win
-          then: dlfcn-win32
-        - gtest
-        - python
-        - nanobind
-        - if: match(python, "<3.11")
-          then: typing_extensions
-        - roboplan-common ==${{ version }}
-        - roboplan-core-python ==${{ version }}
-        - roboplan-example-models-python ==${{ version }}
-        - libtoppra
-        - eigen-abi-devel
-      run:
-        - python
-        - roboplan-common ==${{ version }}
-        - roboplan-core-python ==${{ version }}
-        - roboplan-example-models-python ==${{ version }}
-      ignore_run_exports:
-        by_name:
-          - gtest
-        from_package:
-          - gtest
-    tests:
-      - package_contents:
-          lib:
-            - roboplan_toppra
-      - python:
-          pip_check: false
-          imports:
-            - roboplan.toppra
 
   - package:
       name: libroboplan-cartesian-planning
       version: ${{ version }}
+    inherit:
+      from: roboplan-cpp
+      run_exports: false
     build:
-      script:
-        file: build_cpp
-        env:
-          ROBOPLAN_PACKAGE: roboplan_cartesian_planning
+      files:
+        - ${{ library_prefix }}include/roboplan_cartesian_planning/**
+        - ${{ library_prefix }}lib/cmake/roboplan_cartesian_planning/**
+        - if: win
+          then:
+            - Library/bin/roboplan_cartesian_planning.dll
+            - Library/lib/roboplan_cartesian_planning.lib
+          else:
+            - lib/libroboplan_cartesian_planning.*
     requirements:
       run_exports:
         - ${{ pin_subpackage("libroboplan-cartesian-planning", upper_bound="x.x.x") }}
       build:
         - ${{ stdlib('c') }}
         - ${{ compiler('cxx') }}
-        - cmake
-        - ninja
       host:
         - if: win
           then: dlfcn-win32
-        - gtest
         - libroboplan-core ==${{ version }}
-        - libroboplan-example-models ==${{ version }}
         - libroboplan-oink ==${{ version }}
         - libroboplan-toppra ==${{ version }}
+        - qhull
         - eigen-abi-devel
-      ignore_run_exports:
-        by_name:
-          - gtest
-        from_package:
-          - gtest
     tests:
       - package_contents:
           lib:
             - roboplan_cartesian_planning
-
-  - package:
-      name: roboplan-cartesian-planning-python
-      version: ${{ version }}
-    build:
-      script:
-        file: build_python
-        env:
-          ROBOPLAN_PACKAGE: roboplan_cartesian_planning
-    requirements:
-      run_exports:
-        - ${{ pin_subpackage("roboplan-cartesian-planning-python", upper_bound="x.x.x") }}
-      build:
-        - ${{ stdlib('c') }}
-        - ${{ compiler('cxx') }}
-        - cmake
-        - ninja
-        - python
-        - nanobind
-        - if: match(python, "<3.11")
-          then: typing_extensions
-      host:
-        - if: win
-          then: dlfcn-win32
-        - gtest
-        - python
-        - nanobind
-        - if: match(python, "<3.11")
-          then: typing_extensions
-        - roboplan-common ==${{ version }}
-        - roboplan-core-python ==${{ version }}
-        - roboplan-example-models-python ==${{ version }}
-        - roboplan-oink-python ==${{ version }}
-        - roboplan-toppra-python ==${{ version }}
-        - libtoppra
-        - eigen-abi-devel
-      run:
-        - python
-        - roboplan-common ==${{ version }}
-        - roboplan-core-python ==${{ version }}
-        - roboplan-example-models-python ==${{ version }}
-        - roboplan-oink-python ==${{ version }}
-        - roboplan-toppra-python ==${{ version }}
-      ignore_run_exports:
-        by_name:
-          - gtest
-        from_package:
-          - gtest
-    tests:
-      - package_contents:
-          lib:
-            - roboplan_cartesian_planning
-      - python:
-          pip_check: false
-          imports:
-            - roboplan.cartesian_planning
 
   - package:
       name: libroboplan
@@ -657,6 +369,251 @@ outputs:
           recipe:
             - test_libs.sh
             - test_libs.bat
+
+  # Python libs
+
+  - package:
+      name: roboplan-common
+      version: ${{ version }}
+    inherit:
+      from: roboplan-py
+      run_exports: false
+    build:
+      files:
+        - "**/site-packages/roboplan_common/**"
+    requirements:
+      run_exports:
+        - ${{ pin_subpackage("roboplan-common", upper_bound="x.x.x") }}
+      host:
+        - python
+      run:
+        - python
+    tests:
+      - package_contents:
+          site_packages:
+            - roboplan_common
+      - python:
+          pip_check: false
+          imports:
+            - roboplan_common
+
+  - package:
+      name: roboplan-example-models-python
+      version: ${{ version }}
+    inherit:
+      from: roboplan-py
+      run_exports: false
+    build:
+      files:
+        - "**/site-packages/roboplan/example_models/**"
+    requirements:
+      run_exports:
+        - ${{ pin_subpackage("roboplan-example-models-python", upper_bound="x.x.x") }}
+      build:
+        - ${{ stdlib('c') }}
+        - ${{ compiler('cxx') }}
+      host:
+        - python
+        - libroboplan-example-models ==${{ version }}
+      run:
+        - python
+        - roboplan-common ==${{ version }}
+        - numpy
+        - pinocchio-python >=${{ pinocchio_min }},<${{ pinocchio_max }}
+    tests:
+      - python:
+          pip_check: false
+          imports:
+            - roboplan.example_models
+
+  - package:
+      name: roboplan-core-python
+      version: ${{ version }}
+    inherit:
+      from: roboplan-py
+      run_exports: false
+    build:
+      files:
+        - "**/site-packages/roboplan/*.py"
+        - "**/site-packages/roboplan/core/**"
+        - "**/site-packages/roboplan/filters/**"
+    requirements:
+      run_exports:
+        - ${{ pin_subpackage("roboplan-core-python", upper_bound="x.x.x") }}
+      build:
+        - ${{ stdlib('c') }}
+        - ${{ compiler('cxx') }}
+      host:
+        - python
+        - libroboplan-core ==${{ version }}
+        - libcoal
+        - octomap
+        - qhull
+      run:
+        - python
+        - roboplan-common ==${{ version }}
+        - numpy
+        - pinocchio-python >=${{ pinocchio_min }},<${{ pinocchio_max }}
+        - roboplan-example-models-python ==${{ version }}
+    tests:
+      - python:
+          pip_check: false
+          imports:
+            - roboplan.core
+            - roboplan.filters
+
+  - package:
+      name: roboplan-oink-python
+      version: ${{ version }}
+    inherit:
+      from: roboplan-py
+      run_exports: false
+    build:
+      files:
+        - "**/site-packages/roboplan/optimal_ik/**"
+    requirements:
+      run_exports:
+        - ${{ pin_subpackage("roboplan-oink-python", upper_bound="x.x.x") }}
+      build:
+        - ${{ stdlib('c') }}
+        - ${{ compiler('cxx') }}
+      host:
+        - python
+        - libroboplan-oink ==${{ version }}
+        - qhull
+      run:
+        - python
+        - roboplan-common ==${{ version }}
+        - roboplan-core-python ==${{ version }}
+        - roboplan-example-models-python ==${{ version }}
+    tests:
+      - python:
+          pip_check: false
+          imports:
+            - roboplan.optimal_ik
+
+  - package:
+      name: roboplan-rrt-python
+      version: ${{ version }}
+    inherit:
+      from: roboplan-py
+      run_exports: false
+    build:
+      files:
+        - "**/site-packages/roboplan/rrt/**"
+    requirements:
+      run_exports:
+        - ${{ pin_subpackage("roboplan-rrt-python", upper_bound="x.x.x") }}
+      build:
+        - ${{ stdlib('c') }}
+        - ${{ compiler('cxx') }}
+      host:
+        - python
+        - libroboplan-rrt ==${{ version }}
+        - libpinocchio >=${{ pinocchio_min }},<${{ pinocchio_max }}
+        - qhull
+      run:
+        - python
+        - roboplan-common ==${{ version }}
+        - roboplan-core-python ==${{ version }}
+        - roboplan-example-models-python ==${{ version }}
+    tests:
+      - python:
+          pip_check: false
+          imports:
+            - roboplan.rrt
+
+  - package:
+      name: roboplan-simple-ik-python
+      version: ${{ version }}
+    inherit:
+      from: roboplan-py
+      run_exports: false
+    build:
+      files:
+        - "**/site-packages/roboplan/simple_ik/**"
+    requirements:
+      run_exports:
+        - ${{ pin_subpackage("roboplan-simple-ik-python", upper_bound="x.x.x") }}
+      build:
+        - ${{ stdlib('c') }}
+        - ${{ compiler('cxx') }}
+      host:
+        - python
+        - libroboplan-simple-ik ==${{ version }}
+        - qhull
+      run:
+        - python
+        - roboplan-common ==${{ version }}
+        - roboplan-core-python ==${{ version }}
+        - roboplan-example-models-python ==${{ version }}
+    tests:
+      - python:
+          pip_check: false
+          imports:
+            - roboplan.simple_ik
+
+  - package:
+      name: roboplan-toppra-python
+      version: ${{ version }}
+    inherit:
+      from: roboplan-py
+      run_exports: false
+    build:
+      files:
+        - "**/site-packages/roboplan/toppra/**"
+    requirements:
+      run_exports:
+        - ${{ pin_subpackage("roboplan-toppra-python", upper_bound="x.x.x") }}
+      build:
+        - ${{ stdlib('c') }}
+        - ${{ compiler('cxx') }}
+      host:
+        - python
+        - libroboplan-toppra ==${{ version }}
+        - qhull
+      run:
+        - python
+        - roboplan-common ==${{ version }}
+        - roboplan-core-python ==${{ version }}
+        - roboplan-example-models-python ==${{ version }}
+    tests:
+      - python:
+          pip_check: false
+          imports:
+            - roboplan.toppra
+
+  - package:
+      name: roboplan-cartesian-planning-python
+      version: ${{ version }}
+    inherit:
+      from: roboplan-py
+      run_exports: false
+    build:
+      files:
+        - "**/site-packages/roboplan/cartesian_planning/**"
+    requirements:
+      run_exports:
+        - ${{ pin_subpackage("roboplan-cartesian-planning-python", upper_bound="x.x.x") }}
+      build:
+        - ${{ stdlib('c') }}
+        - ${{ compiler('cxx') }}
+      host:
+        - python
+        - libroboplan-oink ==${{ version }}
+        - libroboplan-cartesian-planning ==${{ version }}
+      run:
+        - python
+        - roboplan-common ==${{ version }}
+        - roboplan-core-python ==${{ version }}
+        - roboplan-example-models-python ==${{ version }}
+        - roboplan-oink-python ==${{ version }}
+        - roboplan-toppra-python ==${{ version }}
+    tests:
+      - python:
+          pip_check: false
+          imports:
+            - roboplan.cartesian_planning
 
   - package:
       name: roboplan-python
