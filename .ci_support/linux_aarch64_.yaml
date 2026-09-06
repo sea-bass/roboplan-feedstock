@@ -31,5 +31,3 @@ target_platform:
 - linux-aarch64
 tinyxml2:
 - '11.0'
-urdfdom:
-- '5.1'
