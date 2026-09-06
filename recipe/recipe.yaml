@@ -1,8 +1,8 @@
 context:
   name: roboplan
   version: "0.6.1"
-  # Testing open-planning/roboplan#301 (allow-generating-conda-packages-from-pixi).
-  git_rev: "8bd7b2ec35956b13e502c693abef4dc86050ade9"
+  # Testing open-planning/roboplan#312 (make-cmeel-packages-independently-buildable).
+  git_rev: "b262d5cd14d77bb341a2a6d7b3d59d24e0abfddf"
   pinocchio_min: "4.0.0"
   pinocchio_max: "5.0.0"
 
@@ -12,7 +12,7 @@ recipe:
 
 source:
   url: https://github.com/open-planning/roboplan/archive/${{ git_rev }}.tar.gz
-  sha256: d32bd18db792c11f1c842599630485f4a658aa93002ef18e3a5f167a92b58544
+  sha256: 03ff9ec38fed9c614b30144eea782f3bff27ec4e68e64ad4c59b251573acb64d
 
 build:
   number: 0
@@ -43,10 +43,6 @@ outputs:
       - package_contents:
           site_packages:
             - roboplan_common
-          files:
-            - if: win
-              then: Library/lib/cmake/roboplan_common/roboplan_commonConfig.cmake
-              else: lib/cmake/roboplan_common/roboplan_commonConfig.cmake
       - python:
           pip_check: false
           imports:
@@ -137,7 +133,7 @@ outputs:
       script:
         file: build_cpp
         env:
-          ROBOPLAN_PACKAGE: roboplan
+          ROBOPLAN_PACKAGE: roboplan_core
     requirements:
       run_exports:
         - ${{ pin_subpackage("libroboplan-core", upper_bound="x.x.x") }}
@@ -173,7 +169,7 @@ outputs:
       script:
         file: build_python
         env:
-          ROBOPLAN_PACKAGE: roboplan
+          ROBOPLAN_PACKAGE: roboplan_core
     requirements:
       run_exports:
         - ${{ pin_subpackage("roboplan-core-python", upper_bound="x.x.x") }}
