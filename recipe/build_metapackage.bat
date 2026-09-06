@@ -12,6 +12,13 @@ if "%ROBOPLAN_PYTHON_BINDINGS%"=="ON" (
   set "PYTHON_ARGS=-DROBOPLAN_PYTHON_INSTALL_DIR=share/roboplan_superbuild_unused"
 )
 
+rem pinocchio's CMake config appends /Zc:__cplusplus to CMAKE_CXX_FLAGS of the
+rem directory that calls find_package(pinocchio). In the metapackage, only
+rem roboplan_core does; the sibling packages resolve roboplan in-tree and skip
+rem the config, so without this MSVC reports __cplusplus as 199711 and pinocchio's
+rem deprecation macros expand to a form MSVC rejects on alias declarations.
+set "CXXFLAGS=%CXXFLAGS% /Zc:__cplusplus"
+
 cmake -S "%SRC_DIR%\superbuild" ^
   -B build ^
   -G Ninja ^

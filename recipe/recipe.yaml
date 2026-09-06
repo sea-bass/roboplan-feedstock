@@ -51,6 +51,7 @@ outputs:
         - proxsuite
         - libtoppra
         - eigen-abi-devel
+        - qhull
 
   - staging:
       name: roboplan-py
@@ -82,6 +83,8 @@ outputs:
         - proxsuite
         - libtoppra
         - eigen-abi-devel
+        - qhull
+        - octomap
 
   # C++ libs
 
@@ -138,6 +141,14 @@ outputs:
           else:
             - lib/libroboplan.*
             - lib/libroboplan_filters.*
+      dynamic_linking:
+        missing_dso_allowlist:
+          # pinocchio's URDF parser pulls urdfdom into libroboplan's link.
+          # urdfdom cannot be a host dep here: conda-forge pins it globally
+          # to a version libpinocchio 4.1 does not build against, which would
+          # make this output's solve diverge from the staging build.
+          # libpinocchio's own urdfdom pin provides it.
+          - "**/*urdfdom_world*"
     requirements:
       run_exports:
         - ${{ pin_subpackage("libroboplan-core", upper_bound="x.x.x") }}
@@ -150,7 +161,6 @@ outputs:
         - libcoal
         - libpinocchio >=${{ pinocchio_min }},<${{ pinocchio_max }}
         - tinyxml2
-        - urdfdom
         - yaml-cpp
         - eigen-abi-devel
     tests:
