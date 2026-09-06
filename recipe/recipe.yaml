@@ -74,8 +74,16 @@ outputs:
         - python
         - nanobind
         # Stub generation imports the roboplan.* packages, which import these.
-        - numpy
-        - pinocchio-python >=${{ pinocchio_min }},<${{ pinocchio_max }}
+        # Stubs are off on Windows (see build_metapackage.bat), and there these
+        # must stay out of host: pinocchio-python's and scipy's win-64 packages
+        # record site-packages as lowercase lib/. Whichever package creates
+        # that directory first wins on the case-insensitive filesystem, and
+        # roboplan's own files then get packaged as lib/site-packages instead
+        # of Lib/site-packages, failing the package_contents checks.
+        - if: not win
+          then:
+            - numpy
+            - pinocchio-python >=${{ pinocchio_min }},<${{ pinocchio_max }}
         - libcoal
         - libpinocchio >=${{ pinocchio_min }},<${{ pinocchio_max }}
         - tinyxml2
