@@ -1,8 +1,8 @@
 context:
   name: roboplan
-  version: "0.6.1"
-  # Testing open-planning/roboplan#314 (fix-windows-conda-build).
-  git_rev: "ad62b9dd7bfed22838696aa1f45a844a3764c960"
+  version: "0.7.0"
+  # Testing on an intermediate RoboPlan commit.
+  git_rev: "800739dc8fe3da40f957ec6a599a9a7df42f0024"
   pinocchio_min: "4.0.0"
   pinocchio_max: "5.0.0"
   library_prefix: ${{ "Library/" if win else "" }}
@@ -13,7 +13,7 @@ recipe:
 
 source:
   url: https://github.com/open-planning/roboplan/archive/${{ git_rev }}.tar.gz
-  sha256: 96c743768bda217f37981a253b0394e089aa0799598ad1f139db45aa0db67fe0
+  sha256: 7c5554b92eba44e928a1342ecefadf98ff83fb62c2d9d70188a3a253db8f9532
 
 build:
   number: 0
