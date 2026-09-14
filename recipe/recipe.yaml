@@ -13,7 +13,7 @@ source:
   sha256: 1d6fb63c597be17f48801bec3846166e6403b3130ac61c68973e99335bca83a6
 
 build:
-  number: 0
+  number: 1
 
 outputs:
   - package:
@@ -72,6 +72,7 @@ outputs:
         - gtest
         - python
         - nanobind
+        - nanobind-abi
         - if: match(python, "<3.11")
           then: typing_extensions
       run:
@@ -154,6 +155,7 @@ outputs:
         - gtest
         - python
         - nanobind
+        - nanobind-abi
         - if: match(python, "<3.11")
           then: typing_extensions
         - libcoal
@@ -241,6 +243,7 @@ outputs:
         - gtest
         - python
         - nanobind
+        - nanobind-abi
         - if: match(python, "<3.11")
           then: typing_extensions
         - roboplan-python ==${{ version }}
@@ -319,6 +322,7 @@ outputs:
         - gtest
         - python
         - nanobind
+        - nanobind-abi
         - if: match(python, "<3.11")
           then: typing_extensions
         - roboplan-python ==${{ version }}
@@ -396,6 +400,7 @@ outputs:
         - gtest
         - python
         - nanobind
+        - nanobind-abi
         - if: match(python, "<3.11")
           then: typing_extensions
         - roboplan-python ==${{ version }}
@@ -479,6 +484,7 @@ outputs:
         - gtest
         - python
         - nanobind
+        - nanobind-abi
         - if: match(python, "<3.11")
           then: typing_extensions
         - roboplan-python ==${{ version }}
@@ -564,6 +570,7 @@ outputs:
         - gtest
         - python
         - nanobind
+        - nanobind-abi
         - if: match(python, "<3.11")
           then: typing_extensions
         - roboplan-python ==${{ version }}
