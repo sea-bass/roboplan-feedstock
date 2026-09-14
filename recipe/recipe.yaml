@@ -73,6 +73,7 @@ outputs:
           then: dlfcn-win32
         - python
         - nanobind
+        - nanobind-abi
         # Stub generation imports the roboplan.* packages, which import these.
         - numpy
         - pinocchio-python >=${{ pinocchio_min }},<${{ pinocchio_max }}
