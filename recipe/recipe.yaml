@@ -2,7 +2,7 @@ context:
   name: roboplan
   version: "0.7.0"
   # Testing on an intermediate RoboPlan commit.
-  git_rev: "800739dc8fe3da40f957ec6a599a9a7df42f0024"
+  git_rev: "1830ff1add87555020e668152afa7f5da1b561ee"
   pinocchio_min: "4.0.0"
   pinocchio_max: "5.0.0"
   library_prefix: ${{ "Library/" if win else "" }}
@@ -13,10 +13,10 @@ recipe:
 
 source:
   url: https://github.com/open-planning/roboplan/archive/${{ git_rev }}.tar.gz
-  sha256: 7c5554b92eba44e928a1342ecefadf98ff83fb62c2d9d70188a3a253db8f9532
+  sha256: a6536d84789f24eaa9f208afd8d4d81f1ff7f49b103df789ec85059d685e9a14
 
 build:
-  number: 0
+  number: 1
 
 # Two runs of upstream's superbuild/ tree feed every output below:
 #   - roboplan-cpp: Python bindings off, split into the libroboplan-* outputs.
